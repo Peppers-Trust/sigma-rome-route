@@ -1,0 +1,442 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Маршрут SiGMA Rome</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Golos+Text:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: exhibition floor plan on top, then a numbered walking list grouped by hall, with a sticky progress strip */
+:root{
+  --bg:#eef1f4; --surface:#ffffff; --ink:#18212b; --muted:#5d6876; --line:#d5dbe2;
+  --hall:#dfe4ea; --hall-on:#cfd9e6; --accent:#d9432b; --accent-soft:#fbe3dd; --done:#2f8f5b; --done-soft:#e1f2e8;
+  --f-display:"Unbounded","Golos Text",system-ui,sans-serif;
+  --f-body:"Golos Text",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#12171d; --surface:#1a2129; --ink:#e7ecf1; --muted:#97a3b1; --line:#2c3642;
+  --hall:#202933; --hall-on:#2a3747; --accent:#f06a50; --accent-soft:#3a221d; --done:#54c088; --done-soft:#17301f; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#12171d; --surface:#1a2129; --ink:#e7ecf1; --muted:#97a3b1; --line:#2c3642;
+  --hall:#202933; --hall-on:#2a3747; --accent:#f06a50; --accent-soft:#3a221d; --done:#54c088; --done-soft:#17301f; color-scheme:dark}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.wrap{max-width:760px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px 64px;display:grid;gap:22px}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+h1{font-family:var(--f-display);font-weight:700;font-size:clamp(26px,6vw,38px);line-height:1.1;margin:6px 0 10px;text-wrap:balance}
+.lead{color:var(--muted);margin:0;max-width:62ch}
+.facts{display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:14px;font-size:14px}
+.facts b{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.progress{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:10px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--line)}
+.bar{flex:1;height:8px;border-radius:99px;background:var(--hall);overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--done);transition:width .3s}
+.progress .txt{font-family:var(--f-mono);font-size:13px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.reset{font:inherit;font-size:13px;background:none;border:1px solid var(--line);color:var(--muted);border-radius:8px;padding:4px 10px;cursor:pointer}
+.reset:focus-visible,.tp:focus-visible,.chk input:focus-visible+.num{outline:2px solid var(--accent);outline-offset:2px}
+.map{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px;overflow-x:auto}
+.map svg{display:block;width:100%;min-width:520px;height:auto}
+.hall{fill:var(--hall)} .hall.on{fill:var(--hall-on)}
+.gal{fill:none;stroke:var(--line);stroke-width:12;stroke-dasharray:40 30}
+.hl{font-family:var(--f-display);font-size:150px;font-weight:700;fill:var(--muted);text-anchor:middle;opacity:.55}
+.gl{font-family:var(--f-body);font-size:62px;fill:var(--muted);text-anchor:middle}
+.route{fill:none;stroke:var(--accent);stroke-width:16;stroke-linejoin:round;stroke-linecap:round;opacity:.8}
+.stop{fill:var(--accent);stroke:var(--surface);stroke-width:10;cursor:pointer}
+.stop.done{fill:var(--done)}
+.ent circle{fill:var(--ink)} .ent text{font-family:var(--f-body);font-size:90px;font-weight:600;fill:var(--ink)}
+.legend{font-size:13px;color:var(--muted);margin:8px 4px 0}
+.hall-sec{display:grid;gap:10px}
+.hall-h{display:flex;align-items:baseline;justify-content:space-between;gap:12px;border-top:2px solid var(--ink);padding-top:12px}
+.hall-h h2{font-family:var(--f-display);font-weight:700;font-size:22px;margin:0}
+.cnt{font-family:var(--f-mono);font-size:13px;color:var(--muted)}
+.hint{margin:0;color:var(--muted);font-size:14px}
+.stops{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.stop-card{display:grid;grid-template-columns:44px 1fr;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;transition:background .2s,border-color .2s}
+.stop-card.done{background:var(--done-soft);border-color:transparent}
+.stop-card.flash{border-color:var(--accent)}
+.body{min-width:0;display:grid;gap:6px}
+.chk{position:relative;display:block;cursor:pointer}
+.chk input{position:absolute;opacity:0;width:44px;height:44px;margin:0;cursor:pointer}
+.num{display:grid;place-items:center;width:40px;height:40px;border-radius:50%;background:var(--accent-soft);color:var(--accent);font-family:var(--f-mono);font-weight:700;font-size:15px}
+.done .num{background:var(--done);color:var(--surface)}
+.top{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px}
+.booth{font-family:var(--f-mono);font-weight:700;font-size:14px;background:var(--ink);color:var(--surface);padding:2px 8px;border-radius:6px;letter-spacing:.02em}
+h3{margin:0;font-size:18px;font-weight:600}
+.meta{display:flex;gap:12px;align-items:baseline;font-variant-numeric:tabular-nums}
+.score{font-family:var(--f-mono);font-weight:700;font-size:16px}
+.score small{color:var(--accent);font-size:14px;margin-left:1px}
+.score.none{font-family:var(--f-body);font-weight:500;font-size:14px;color:var(--muted)}
+.rev{font-size:14px;color:var(--muted)}
+.tags{display:flex;flex-wrap:wrap;gap:6px}
+.tag{font-size:12px;font-weight:500;padding:2px 8px;border-radius:99px;border:1px solid var(--line);color:var(--ink)}
+.body p{margin:0;max-width:62ch}
+.tp{color:var(--accent);font-size:14px;overflow-wrap:anywhere;text-decoration-thickness:1px;text-underline-offset:3px}
+.tp.muted{color:var(--muted)}
+.foot{font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:14px}
+.foot a{color:inherit}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+<style>*,*::before,*::after{box-sizing:border-box}html{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">SiGMA World · Fiera Roma · 2–5 ноября 2026</div>
+    <h1>Маршрут по стендам</h1>
+    <p class="lead">Все 27 компаний, для которых готовы предложения. Порядок посчитан от главного входа так, чтобы не возвращаться в пройденные залы. Тапни номер, когда побывал у стенда.</p>
+    <div class="facts"><span><b>27</b> стендов</span><span><b>5</b> залов: 2 → 4 → 5 → 8 → 7</span><span>около <b>1,5 км</b> пешком</span></div>
+  </header>
+
+  <div class="progress" aria-live="polite"><div class="bar"><i id="bar"></i></div><span class="txt" id="ptxt">0 из 27</span><button class="reset" id="reset" type="button">Сбросить</button></div>
+
+  <figure class="map" style="margin:0">
+<svg viewBox="8480 7450 5000 2880" role="img" aria-label="Схема залов Fiera Roma с маршрутом">
+<rect class="gal" x="8540" y="8700" width="4810" height="280" rx="20"/>
+<text class="gl" x="10950" y="8955">центральная галерея</text>
+<rect class="hall on" x="8580" y="7620" width="720" height="1040" rx="24"/>
+<text class="hl" x="8940" y="8560">8</text>
+<rect class="hall" x="9560" y="7540" width="715" height="1040" rx="24"/>
+<text class="hl" x="9918" y="7690">6</text>
+<rect class="hall on" x="10770" y="7680" width="715" height="885" rx="24"/>
+<text class="hl" x="11128" y="7830">4</text>
+<rect class="hall on" x="11725" y="7880" width="745" height="780" rx="24"/>
+<text class="hl" x="12098" y="8030">2</text>
+<rect class="hall on" x="8580" y="9030" width="720" height="950" rx="24"/>
+<text class="hl" x="8940" y="9910">7</text>
+<rect class="hall on" x="9560" y="9025" width="735" height="1010" rx="24"/>
+<text class="hl" x="9928" y="9965">5</text>
+<rect class="hall" x="10760" y="9025" width="730" height="1205" rx="24"/>
+<text class="hl" x="11125" y="10160">3</text>
+<rect class="hall" x="11740" y="9020" width="730" height="1005" rx="24"/>
+<text class="hl" x="12105" y="9955">1</text>
+<polyline class="route" points="13300,9270 13300,8840 12371,8840 12371,8090 12030,8110 11994,8175 11994,8840 11372,8840 11372,7847 11372,8840 9963,8840 9963,9410 9963,8840 9274,8840 9274,8525 9210,7778 9110,7818 9080,7858 8893,7858 8830,7858 8735,7838 8720,7707 8675,7818 8655,7818 8655,7858 8610,7995 8672,8159 8610,8232 8610,8552 8610,8840 9121,8840 9121,9153 9072,9383 9186,9449 9119,9658 8766,9600 8811,9827 8662,9825"/>
+<circle class="stop" data-i="1" cx="12371" cy="8090" r="34"/>
+<circle class="stop" data-i="2" cx="12030" cy="8110" r="34"/>
+<circle class="stop" data-i="3" cx="11994" cy="8175" r="34"/>
+<circle class="stop" data-i="4" cx="11372" cy="7847" r="34"/>
+<circle class="stop" data-i="5" cx="9963" cy="9410" r="34"/>
+<circle class="stop" data-i="6" cx="9274" cy="8525" r="34"/>
+<circle class="stop" data-i="7" cx="9210" cy="7778" r="34"/>
+<circle class="stop" data-i="8" cx="9110" cy="7818" r="34"/>
+<circle class="stop" data-i="9" cx="9080" cy="7858" r="34"/>
+<circle class="stop" data-i="10" cx="8893" cy="7858" r="34"/>
+<circle class="stop" data-i="11" cx="8830" cy="7858" r="34"/>
+<circle class="stop" data-i="12" cx="8735" cy="7838" r="34"/>
+<circle class="stop" data-i="13" cx="8720" cy="7707" r="34"/>
+<circle class="stop" data-i="14" cx="8675" cy="7818" r="34"/>
+<circle class="stop" data-i="15" cx="8655" cy="7818" r="34"/>
+<circle class="stop" data-i="16" cx="8655" cy="7858" r="34"/>
+<circle class="stop" data-i="17" cx="8610" cy="7995" r="34"/>
+<circle class="stop" data-i="18" cx="8672" cy="8159" r="34"/>
+<circle class="stop" data-i="19" cx="8610" cy="8232" r="34"/>
+<circle class="stop" data-i="20" cx="8610" cy="8552" r="34"/>
+<circle class="stop" data-i="21" cx="9121" cy="9153" r="34"/>
+<circle class="stop" data-i="22" cx="9072" cy="9383" r="34"/>
+<circle class="stop" data-i="23" cx="9186" cy="9449" r="34"/>
+<circle class="stop" data-i="24" cx="9119" cy="9658" r="34"/>
+<circle class="stop" data-i="25" cx="8766" cy="9600" r="34"/>
+<circle class="stop" data-i="26" cx="8811" cy="9827" r="34"/>
+<circle class="stop" data-i="27" cx="8662" cy="9825" r="34"/>
+<g class="ent"><circle cx="13300" cy="9270" r="60"/><text x="13270" y="9160" text-anchor="end">Главный вход</text></g>
+</svg>
+    <figcaption class="legend">Схема по координатам официальной карты выставки. Подсвечены залы, куда идём; точки кликабельны.</figcaption>
+  </figure>
+
+<section class="hall-sec"><header class="hall-h"><h2>Зал 2</h2><span class="cnt">3 стенда</span></header><p class="hint">Первый зал справа от главного входа (северная сторона).</p><ol class="stops">
+<li class="stop-card" id="s1" data-i="1">
+<label class="chk"><input type="checkbox" id="c1" data-i="1"><span class="num">1</span></label>
+<div class="body">
+<div class="top"><span class="booth">H2-2204</span><h3>Paxum</h3></div>
+<div class="meta"><span class="score">1.3<small>★</small></span><span class="rev">58 отз.</span></div>
+<div class="tags"><span class="tag">Все отзывы за год 1★</span><span class="tag">Нет ответов</span></div>
+<p>За последние 12 месяцев все 8 отзывов однозвёздочные (за всё время таких 34%). На негатив не отвечают, приглашений нет.</p>
+<a class="tp" href="https://www.trustpilot.com/review/paxumbank.com" target="_blank" rel="noopener">trustpilot.com/review/paxumbank.com</a>
+</div></li>
+<li class="stop-card" id="s2" data-i="2">
+<label class="chk"><input type="checkbox" id="c2" data-i="2"><span class="num">2</span></label>
+<div class="body">
+<div class="top"><span class="booth">H2-2215</span><h3>Total Security</h3></div>
+<div class="meta"><span class="score none">нет рейтинга</span><span class="rev">0 отз.</span></div>
+<div class="tags"><span class="tag">Пустой профиль</span></div>
+<p>Профиль заявлен 2 года назад, но не используется: ни одного отзыва. Первый же отзыв задаст им рейтинг.</p>
+<a class="tp" href="https://www.trustpilot.com/review/totalsecurity.com" target="_blank" rel="noopener">trustpilot.com/review/totalsecurity.com</a>
+</div></li>
+<li class="stop-card" id="s3" data-i="3">
+<label class="chk"><input type="checkbox" id="c3" data-i="3"><span class="num">3</span></label>
+<div class="body">
+<div class="top"><span class="booth">H2-2224</span><h3>Opera</h3></div>
+<div class="meta"><span class="score">1.8<small>★</small></span><span class="rev">495 отз.</span></div>
+<div class="tags"><span class="tag">Нет приглашений</span><span class="tag">Нет ответов</span></div>
+<p>Из приглашений 1 отзыв из 104 за год, остальное органика. На 89 негативных отзывов ни одного ответа. 56% отзывов за всё время однозвёздочные.</p>
+<a class="tp" href="https://www.trustpilot.com/review/opera.com" target="_blank" rel="noopener">trustpilot.com/review/opera.com</a>
+</div></li>
+</ol></section>
+<section class="hall-sec"><header class="hall-h"><h2>Зал 4</h2><span class="cnt">1 стенд</span></header><p class="hint">Следующий зал по северной стороне.</p><ol class="stops">
+<li class="stop-card" id="s4" data-i="4">
+<label class="chk"><input type="checkbox" id="c4" data-i="4"><span class="num">4</span></label>
+<div class="body">
+<div class="top"><span class="booth">H4-4044</span><h3>Cloudflare</h3></div>
+<div class="meta"><span class="score">1.5<small>★</small></span><span class="rev">1 338 отз.</span></div>
+<div class="tags"><span class="tag">Нет приглашений</span><span class="tag">Нет ответов</span></div>
+<p>Из приглашений 2 отзыва из 297 за год. На 262 негативных отзыва ни одного ответа. 74% отзывов однозвёздочные. Большой стенд, 51 м².</p>
+<a class="tp" href="https://www.trustpilot.com/review/cloudflare.com" target="_blank" rel="noopener">trustpilot.com/review/cloudflare.com</a>
+</div></li>
+</ol></section>
+<section class="hall-sec"><header class="hall-h"><h2>Зал 5</h2><span class="cnt">1 стенд</span></header><p class="hint">Через галерею на южную сторону.</p><ol class="stops">
+<li class="stop-card" id="s5" data-i="5">
+<label class="chk"><input type="checkbox" id="c5" data-i="5"><span class="num">5</span></label>
+<div class="body">
+<div class="top"><span class="booth">H5-5047</span><h3>Aircash</h3></div>
+<div class="meta"><span class="score">3.3<small>★</small></span><span class="rev">307 отз.</span></div>
+<div class="tags"><span class="tag">Платят, но не приглашают</span><span class="tag">Рейтинг падает</span></div>
+<p>Подписка Trustpilot есть, но из приглашений только 5 отзывов из 100 за год. Доля 1★ за год 43% против 22% за всё время. На негатив отвечают (96%).</p>
+<a class="tp" href="https://www.trustpilot.com/review/aircash.eu" target="_blank" rel="noopener">trustpilot.com/review/aircash.eu</a>
+</div></li>
+</ol></section>
+<section class="hall-sec"><header class="hall-h"><h2>Зал 8</h2><span class="cnt">15 стендов</span></header><p class="hint">Самый дальний зал на северной стороне, тут больше всего клиентов. Идём от восточного края зала к западному.</p><ol class="stops">
+<li class="stop-card" id="s6" data-i="6">
+<label class="chk"><input type="checkbox" id="c6" data-i="6"><span class="num">6</span></label>
+<div class="body">
+<div class="top"><span class="booth">H8-8000</span><h3>Bankera</h3></div>
+<div class="meta"><span class="score">1.9<small>★</small></span><span class="rev">792 отз.</span></div>
+<div class="tags"><span class="tag">Рейтинг падает</span><span class="tag">Нет ответов</span></div>
+<p>За год 91% отзывов однозвёздочные (за всё время 34%). На 41 негативный отзыв ни одного ответа, приглашений нет.</p>
+<a class="tp" href="https://www.trustpilot.com/review/bankera.com" target="_blank" rel="noopener">trustpilot.com/review/bankera.com</a>
+</div></li>
+<li class="stop-card" id="s7" data-i="7">
+<label class="chk"><input type="checkbox" id="c7" data-i="7"><span class="num">7</span></label>
+<div class="body">
+<div class="top"><span class="booth">H8-8125</span><h3>Satchel</h3></div>
+<div class="meta"><span class="score">3.0<small>★</small></span><span class="rev">52 отз.</span></div>
+<div class="tags"><span class="tag">Нет приглашений</span></div>
+<p>Ни одного приглашённого отзыва за год (0 из 23). 60% всех отзывов однозвёздочные. На негатив отвечают.</p>
+<a class="tp" href="https://www.trustpilot.com/review/satchel.eu" target="_blank" rel="noopener">trustpilot.com/review/satchel.eu</a>
+</div></li>
+<li class="stop-card" id="s8" data-i="8">
+<label class="chk"><input type="checkbox" id="c8" data-i="8"><span class="num">8</span></label>
+<div class="body">
+<div class="top"><span class="booth">H8-8105</span><h3>MiFinity</h3></div>
+<div class="meta"><span class="score">3.5<small>★</small></span><span class="rev">1 736 отз.</span></div>
+<div class="tags"><span class="tag">Разрыв в оценках</span><span class="tag">Восстанавливается</span></div>
+<p>Подписка есть, приглашают через интеграцию. Приглашённые ставят в среднем 4.2, органика 2.2. Доля 1★ за год снизилась до 23% (за всё время 49%). Отвечают на весь негатив за сутки.</p>
+<a class="tp" href="https://www.trustpilot.com/review/mifinity.com" target="_blank" rel="noopener">trustpilot.com/review/mifinity.com</a>
+</div></li>
+<li class="stop-card" id="s9" data-i="9">
+<label class="chk"><input type="checkbox" id="c9" data-i="9"><span class="num">9</span></label>
+<div class="body">
+<div class="top"><span class="booth">H8-8107</span><h3>Think Huge</h3></div>
+<div class="meta"><span class="score">3.2<small>★</small></span><span class="rev">1 отз.</span></div>
+<div class="tags"><span class="tag">Один отзыв, 1★</span></div>
+<p>На профиле единственный отзыв: 1★ от октября 2025, без ответа. Он один определяет весь рейтинг.</p>
+<a class="tp" href="https://www.trustpilot.com/review/www.thinkhuge.net" target="_blank" rel="noopener">trustpilot.com/review/www.thinkhuge.net</a>
+</div></li>
+<li class="stop-card" id="s10" data-i="10">
+<label class="chk"><input type="checkbox" id="c10" data-i="10"><span class="num">10</span></label>
+<div class="body">
+<div class="top"><span class="booth">H8-8109</span><h3>Alchemy Markets</h3></div>
+<div class="meta"><span class="score">3.7<small>★</small></span><span class="rev">40 отз.</span></div>
+<div class="tags"><span class="tag">Мало отзывов</span></div>
+<p>Подписка есть, приглашения автоматические (94% отзывов), но объём маленький: 34 отзыва за год. 21% отзывов за год однозвёздочные.</p>
+<a class="tp" href="https://www.trustpilot.com/review/alchemymarkets.com" target="_blank" rel="noopener">trustpilot.com/review/alchemymarkets.com</a>
+</div></li>
+<li class="stop-card" id="s11" data-i="11">
+<label class="chk"><input type="checkbox" id="c11" data-i="11"><span class="num">11</span></label>
+<div class="body">
+<div class="top"><span class="booth">H8-8116</span><h3>VS Markets</h3></div>
+<div class="meta"><span class="score">4.0<small>★</small></span><span class="rev">4 отз.</span></div>
+<div class="tags"><span class="tag">Рейтинг занижен</span></div>
+<p>Все 4 отзыва пятёрки, но TrustScore 4.0: при малом числе отзывов Trustpilot добавляет к расчёту 7 условных оценок 3.5. Приглашают почти не используя (1 из 4).</p>
+<a class="tp" href="https://www.trustpilot.com/review/vsmarkets.com" target="_blank" rel="noopener">trustpilot.com/review/vsmarkets.com</a>
+</div></li>
+<li class="stop-card" id="s12" data-i="12">
+<label class="chk"><input type="checkbox" id="c12" data-i="12"><span class="num">12</span></label>
+<div class="body">
+<div class="top"><span class="booth">H8-8095</span><h3>Libertex</h3></div>
+<div class="meta"><span class="score">3.8<small>★</small></span><span class="rev">4 388 отз.</span></div>
+<div class="tags"><span class="tag">Объём упал</span><span class="tag">Разрыв в оценках</span></div>
+<p>Два профиля: libertex.org (3.8, 4 388 отзывов, по нему сделано предложение) и libertex.com (3.9, 9 537). По .org объём упал с 313 отзывов (дек–фев) до 20 (авг–окт). Приглашённые 4.1 против 1.4 у органики. Подписка есть, но приглашают обычной ссылкой без плашки «Verified». Ещё у них лаунж Outdoor Lounge 29 и мини-стенд H5-5122.</p>
+<a class="tp" href="https://www.trustpilot.com/review/libertex.org" target="_blank" rel="noopener">trustpilot.com/review/libertex.org</a>
+</div></li>
+<li class="stop-card" id="s13" data-i="13">
+<label class="chk"><input type="checkbox" id="c13" data-i="13"><span class="num">13</span></label>
+<div class="body">
+<div class="top"><span class="booth">H8-8098</span><h3>Edamame</h3></div>
+<div class="meta"><span class="score none">нет рейтинга</span><span class="rev">0 отз.</span></div>
+<div class="tags"><span class="tag">Профиль не заявлен</span></div>
+<p>Профиль создан самим Trustpilot 27.10.2026, никто из компании им не управляет. Отзывов пока нет.</p>
+<a class="tp" href="https://www.trustpilot.com/review/edamame.com" target="_blank" rel="noopener">trustpilot.com/review/edamame.com</a>
+</div></li>
+<li class="stop-card" id="s14" data-i="14">
+<label class="chk"><input type="checkbox" id="c14" data-i="14"><span class="num">14</span></label>
+<div class="body">
+<div class="top"><span class="booth">H8-8122</span><h3>Avora Markets</h3></div>
+<div class="meta"><span class="score">4.1<small>★</small></span><span class="rev">5 отз.</span></div>
+<div class="tags"><span class="tag">Тихий профиль</span></div>
+<p>5 отзывов, последний 10 месяцев назад. Приглашений нет.</p>
+<a class="tp" href="https://www.trustpilot.com/review/avoramarkets.com" target="_blank" rel="noopener">trustpilot.com/review/avoramarkets.com</a>
+</div></li>
+<li class="stop-card" id="s15" data-i="15">
+<label class="chk"><input type="checkbox" id="c15" data-i="15"><span class="num">15</span></label>
+<div class="body">
+<div class="top"><span class="booth">H8-8123</span><h3>Swissquote</h3></div>
+<div class="meta"><span class="score">3.5<small>★</small></span><span class="rev">4 363 отз.</span></div>
+<div class="tags"><span class="tag">Нет плашки Verified</span><span class="tag">Разрыв в оценках</span></div>
+<p>Подписка есть, приглашают обычной ссылкой: ни один из 532 приглашённых отзывов не помечен «Verified». Приглашённые 4.1 против 1.8 у органики. На негатив отвечают все и за сутки.</p>
+<a class="tp" href="https://www.trustpilot.com/review/swissquote.com" target="_blank" rel="noopener">trustpilot.com/review/swissquote.com</a>
+</div></li>
+<li class="stop-card" id="s16" data-i="16">
+<label class="chk"><input type="checkbox" id="c16" data-i="16"><span class="num">16</span></label>
+<div class="body">
+<div class="top"><span class="booth">H8-8124</span><h3>In2markets</h3></div>
+<div class="meta"><span class="score none">нет рейтинга</span><span class="rev">0 отз.</span></div>
+<div class="tags"><span class="tag">Профиль не заявлен</span></div>
+<p>Пустой незаявленный профиль, создан Trustpilot 27.10.2026.</p>
+<a class="tp" href="https://www.trustpilot.com/review/in2markets.com" target="_blank" rel="noopener">trustpilot.com/review/in2markets.com</a>
+</div></li>
+<li class="stop-card" id="s17" data-i="17">
+<label class="chk"><input type="checkbox" id="c17" data-i="17"><span class="num">17</span></label>
+<div class="body">
+<div class="top"><span class="booth">H8-8017</span><h3>Errante</h3></div>
+<div class="meta"><span class="score">3.4<small>★</small></span><span class="rev">6 отз.</span></div>
+<div class="tags"><span class="tag">Тихий профиль</span></div>
+<p>Профиль заявлен в мае 2026, подписка есть, но всего 6 отзывов, последний 4 месяца назад.</p>
+<a class="tp" href="https://www.trustpilot.com/review/errante.eu" target="_blank" rel="noopener">trustpilot.com/review/errante.eu</a>
+</div></li>
+<li class="stop-card" id="s18" data-i="18">
+<label class="chk"><input type="checkbox" id="c18" data-i="18"><span class="num">18</span></label>
+<div class="body">
+<div class="top"><span class="booth">H8-6058</span><h3>Eqwire</h3></div>
+<div class="meta"><span class="score none">нет рейтинга</span><span class="rev">0 отз.</span></div>
+<div class="tags"><span class="tag">Заявлен, не используется</span></div>
+<p>Профиль заявлен 4 месяца назад, отзывов ноль. Стенд физически в зале 8, хотя номер начинается на 6.</p>
+<a class="tp" href="https://www.trustpilot.com/review/eqwire.com" target="_blank" rel="noopener">trustpilot.com/review/eqwire.com</a>
+</div></li>
+<li class="stop-card" id="s19" data-i="19">
+<label class="chk"><input type="checkbox" id="c19" data-i="19"><span class="num">19</span></label>
+<div class="body">
+<div class="top"><span class="booth">H8-8021</span><h3>Axon Markets</h3></div>
+<div class="meta"><span class="score">4.1<small>★</small></span><span class="rev">47 отз.</span></div>
+<div class="tags"><span class="tag">Нет приглашений</span><span class="tag">Рейтинг занижен</span></div>
+<p>33 из 47 отзывов пятёрки, но TrustScore 4.1. Приглашений нет, отвечают медленно (в среднем через 42 дня).</p>
+<a class="tp" href="https://www.trustpilot.com/review/axonmarkets.com" target="_blank" rel="noopener">trustpilot.com/review/axonmarkets.com</a>
+</div></li>
+<li class="stop-card" id="s20" data-i="20">
+<label class="chk"><input type="checkbox" id="c20" data-i="20"><span class="num">20</span></label>
+<div class="body">
+<div class="top"><span class="booth">H8-8027</span><h3>Nomo</h3></div>
+<div class="meta"><span class="score">2.8<small>★</small></span><span class="rev">346 отз.</span></div>
+<div class="tags"><span class="tag">Рейтинг падает</span><span class="tag">Объём упал</span></div>
+<p>За год 62% отзывов однозвёздочные (за всё время 23%). Объём упал с 59 отзывов (янв–мар) до 12 (авг–окт). Подписка и автоприглашения есть.</p>
+<a class="tp" href="https://www.trustpilot.com/review/nomotrade.com" target="_blank" rel="noopener">trustpilot.com/review/nomotrade.com</a>
+</div></li>
+</ol></section>
+<section class="hall-sec"><header class="hall-h"><h2>Зал 7</h2><span class="cnt">7 стендов</span></header><p class="hint">Напротив зала 8, через галерею. Заканчиваем здесь.</p><ol class="stops">
+<li class="stop-card" id="s21" data-i="21">
+<label class="chk"><input type="checkbox" id="c21" data-i="21"><span class="num">21</span></label>
+<div class="body">
+<div class="top"><span class="booth">H7-7417</span><h3>Jeton</h3></div>
+<div class="meta"><span class="score">3.1<small>★</small></span><span class="rev">727 отз.</span></div>
+<div class="tags"><span class="tag">Мало приглашений</span><span class="tag">Объём упал</span></div>
+<p>Из приглашений 42 отзыва из 268 за год, без плашки «Verified». Объём упал с 158 (ноя–янв) до 29 (авг–окт). 38% отзывов однозвёздочные.</p>
+<a class="tp" href="https://www.trustpilot.com/review/jeton.com" target="_blank" rel="noopener">trustpilot.com/review/jeton.com</a>
+</div></li>
+<li class="stop-card" id="s22" data-i="22">
+<label class="chk"><input type="checkbox" id="c22" data-i="22"><span class="num">22</span></label>
+<div class="body">
+<div class="top"><span class="booth">H7-7001</span><h3>Clarity Global</h3></div>
+<div class="meta"><span class="score">4.0<small>★</small></span><span class="rev">14 отз.</span></div>
+<div class="tags"><span class="tag">Рейтинг занижен</span></div>
+<p>11 из 14 отзывов пятёрки, но TrustScore 4.0. Приглашений нет.</p>
+<a class="tp" href="https://www.trustpilot.com/review/clarityglobalinc.com" target="_blank" rel="noopener">trustpilot.com/review/clarityglobalinc.com</a>
+</div></li>
+<li class="stop-card" id="s23" data-i="23">
+<label class="chk"><input type="checkbox" id="c23" data-i="23"><span class="num">23</span></label>
+<div class="body">
+<div class="top"><span class="booth">H7-7220</span><h3>Lectra AI</h3></div>
+<div class="meta"><span class="score none">нет рейтинга</span><span class="rev">0 отз.</span></div>
+<div class="tags"><span class="tag">Профиль не заявлен</span></div>
+<p>Пустой незаявленный профиль, создан Trustpilot 27.10.2026.</p>
+<a class="tp" href="https://www.trustpilot.com/review/getlectra.ai" target="_blank" rel="noopener">trustpilot.com/review/getlectra.ai</a>
+</div></li>
+<li class="stop-card" id="s24" data-i="24">
+<label class="chk"><input type="checkbox" id="c24" data-i="24"><span class="num">24</span></label>
+<div class="body">
+<div class="top"><span class="booth">H7-7140</span><h3>Prypco</h3></div>
+<div class="meta"><span class="score">3.8<small>★</small></span><span class="rev">33 отз.</span></div>
+<div class="tags"><span class="tag">Разрыв в оценках</span><span class="tag">Мало отзывов</span></div>
+<p>Профиль заявлен в январе 2026, 29 отзывов за год. Приглашённые ставят 4.9, органика 3.1.</p>
+<a class="tp" href="https://www.trustpilot.com/review/prypco.com" target="_blank" rel="noopener">trustpilot.com/review/prypco.com</a>
+</div></li>
+<li class="stop-card" id="s25" data-i="25">
+<label class="chk"><input type="checkbox" id="c25" data-i="25"><span class="num">25</span></label>
+<div class="body">
+<div class="top"><span class="booth">H7-7093</span><h3>Investing.com</h3></div>
+<div class="meta"><span class="score">4.0<small>★</small></span><span class="rev">1 462 отз.</span></div>
+<div class="tags"><span class="tag">Нет плашки Verified</span><span class="tag">Разрыв в оценках</span></div>
+<p>Подписки нет, приглашают обычной ссылкой: 0 из 431 приглашённых с плашкой «Verified». Приглашённые 4.7 против 1.9 у органики. На негатив отвечают (92%, в среднем за 5 дней).</p>
+<a class="tp" href="https://www.trustpilot.com/review/investing.com" target="_blank" rel="noopener">trustpilot.com/review/investing.com</a>
+</div></li>
+<li class="stop-card" id="s26" data-i="26">
+<label class="chk"><input type="checkbox" id="c26" data-i="26"><span class="num">26</span></label>
+<div class="body">
+<div class="top"><span class="booth">H7-7162</span><h3>Vitalentum</h3></div>
+<div class="meta"><span class="score none">профиля нет</span></div>
+<div class="tags"><span class="tag">Профиля нет</span></div>
+<p>Профиля на Trustpilot нет ни на одном домене (.net, .com, .io). Предложение про создание профиля: он выдаётся в Google и его цитируют ИИ-ассистенты.</p>
+<span class="tp muted">Профиль на Trustpilot отсутствует</span>
+</div></li>
+<li class="stop-card" id="s27" data-i="27">
+<label class="chk"><input type="checkbox" id="c27" data-i="27"><span class="num">27</span></label>
+<div class="body">
+<div class="top"><span class="booth">H7-7171</span><h3>Dukascopy Bank</h3></div>
+<div class="meta"><span class="score">2.7<small>★</small></span><span class="rev">49 отз.</span></div>
+<div class="tags"><span class="tag">Платят, но не приглашают</span><span class="tag">Мало ответов</span></div>
+<p>Подписка есть, но приглашений ноль (0 из 13 за год). 67% отзывов однозвёздочные. Ответили на 3 из 8 негативных.</p>
+<a class="tp" href="https://www.trustpilot.com/review/dukascopy.bank" target="_blank" rel="noopener">trustpilot.com/review/dukascopy.bank</a>
+</div></li>
+</ol></section>
+
+  <p class="foot">Номера стендов взяты с интерактивной карты организатора (<a href="https://sigmaworld2026.expofp.com/" target="_blank" rel="noopener">sigmaworld2026.expofp.com</a>) 30 октября; перед выходом стоит сверить их в приложении SiGMA. Данные Trustpilot из выгрузки для предложений от 26–27 октября, «за год» значит последние 12 месяцев.</p>
+</div>
+
+<script>
+(function(){
+  var KEY='sigma-rome-route-v1', N=27, done={};
+  try{done=JSON.parse(localStorage.getItem(KEY)||'{}')||{}}catch(e){done={}}
+  function save(){try{localStorage.setItem(KEY,JSON.stringify(done))}catch(e){}}
+  function paint(){
+    var c=0;
+    for(var i=1;i<=N;i++){
+      var on=!!done[i]; if(on)c++;
+      var card=document.getElementById('s'+i), box=document.getElementById('c'+i);
+      if(card)card.classList.toggle('done',on); if(box)box.checked=on;
+      var dot=document.querySelector('circle.stop[data-i="'+i+'"]'); if(dot)dot.classList.toggle('done',on);
+    }
+    document.getElementById('bar').style.width=(c/N*100)+'%';
+    document.getElementById('ptxt').textContent=c+' из '+N;
+  }
+  document.querySelectorAll('.chk input').forEach(function(b){
+    b.addEventListener('change',function(){var i=b.dataset.i; if(b.checked)done[i]=1; else delete done[i]; save(); paint();});
+  });
+  document.querySelectorAll('circle.stop').forEach(function(d){
+    var t=document.createElementNS('http://www.w3.org/2000/svg','title');
+    var card=document.getElementById('s'+d.dataset.i);
+    t.textContent=d.dataset.i+'. '+(card?card.querySelector('h3').textContent+' · '+card.querySelector('.booth').textContent:'');
+    d.appendChild(t);
+    d.addEventListener('click',function(){ if(!card)return; card.scrollIntoView({behavior:'smooth',block:'center'}); card.classList.add('flash'); setTimeout(function(){card.classList.remove('flash')},1200);});
+  });
+  var r=document.getElementById('reset'), armed=false;
+  r.addEventListener('click',function(){
+    if(!armed){armed=true;r.textContent='Точно?';setTimeout(function(){armed=false;r.textContent='Сбросить'},3000);return;}
+    done={};save();paint();armed=false;r.textContent='Сбросить';
+  });
+  paint();
+})();
+</script>
+
+</body>
+</html>
